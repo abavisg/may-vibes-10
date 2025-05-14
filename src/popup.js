@@ -268,8 +268,11 @@ document.addEventListener('DOMContentLoaded', function() {
       ignoredSenders.splice(index, 1);
       chrome.storage.local.set({ ignoredSenders: ignoredSenders }, function() {
         console.log('Sender un-ignored:', senderEmail);
-        displayIgnoredSenders(); // Refresh the displayed list
-        // Optionally, re-scan or update the main list if needed
+        displayIgnoredSenders(); // Refresh the displayed ignored list
+        
+        // Also, re-display the main list using the last saved scan results
+        // This makes unignored emails reappear in the main list immediately.
+        loadSavedResults(); // loadSavedResults will call displayResults internally
       });
     }
   }
