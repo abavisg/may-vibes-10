@@ -19,6 +19,14 @@ A Chrome extension that helps you easily find and manage unsubscribe links for n
 - Persists scan results in local storage (`chrome.storage.local`) so the popup loads faster with the last found newsletters
 - Displays scan progress in the popup while fetching and processing emails
 
+## Tech Stack
+
+- Vanilla JavaScript
+- Chrome Extension APIs (`identity`, `storage`, `scripting`, `runtime`, `action`, `tabs`)
+- Gmail API
+- HTML
+- CSS
+
 ## Installation
 
 ### From Chrome Web Store
@@ -85,16 +93,36 @@ The `manifest.json` file is crucial for any Chrome extension. It acts as a confi
 
 We've added `manifest.json` to the `.gitignore` file. This is primarily done to prevent sensitive information (like OAuth client IDs or API keys, if they were not for a public extension) from being accidentally committed to a public repository. While the client ID for a Chrome extension is generally less sensitive, including `manifest.json` in `.gitignore` is a common practice for projects involving APIs to encourage using environment variables or other secure methods for handling credentials in different environments.
 
+### Creating a Google API Client ID
+
+To use the Gmail API, you need to create a Client ID in the Google Cloud Console. This identifies your extension to Google's authentication system.
+
+1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2.  If you don't have a project, create a new one.
+3.  Navigate to "APIs & Services" > "Credentials".
+4.  Click "Create Credentials" and select "OAuth client ID".
+5.  Choose "Chrome App" as the Application type.
+6.  Enter the **Extension ID** of your installed extension. You can find this ID by going to `chrome://extensions/`, ensuring "Developer mode" is enabled, and looking for the ID listed below the extension's name.
+7.  Click "Create".
+8.  A dialog will appear with your Client ID. Copy this ID.
+9.  Open the `manifest.json` file in the root of the project.
+10. Replace the placeholder `[ADD CLIENT ID HERE]` in the `oauth2` section with your copied Client ID.
+
+```json
+"oauth2": {
+  "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
+  "scopes": [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify"
+  ]
+},
+```
+11. Save the `manifest.json` file.
+12. Reload your extension on `chrome://extensions/`.
+13. Grant the necessary permissions when prompted.
+
 ### Console Warnings (Optional)
 You might occasionally see a warning in the Service Worker console like `Could not send progress update, popup likely closed...` if you close the extension popup while a scan is still in progress. This is expected behavior and indicates that the background script is attempting to send progress updates but the popup is not available to receive them. The scan will continue and complete in the background, and the results will be saved.
-
-## Tech Stack
-
-- Vanilla JavaScript
-- Chrome Extension APIs (`identity`, `storage`, `scripting`, `runtime`, `action`, `tabs`)
-- Gmail API
-- HTML
-- CSS
 
 ### Future Improvements
 - Add support for batch unsubscribing
