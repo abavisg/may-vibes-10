@@ -61,8 +61,8 @@ This extension is built using vanilla JavaScript and Chrome Extension APIs (incl
 ### Project Structure:
 - `/` (Root Directory): Contains the `manifest.json` and `README.md`
 - `src/`: Contains all the core extension code and assets
-  - `background.js`: Handles OAuth, Gmail API calls, processing email headers (using `format=full`), and saving results to storage
-  - `popup.html` & `popup.js`: Manages the extension popup UI, displaying results, handling user interactions (unsubscribe, ignore, view ignored), loading saved results, and displaying scan progress
+  - `background.js`: Handles OAuth, Gmail API calls, processing email headers (using `format=full`), sending progress updates, and saving results to storage
+  - `popup.html` & `popup.js`: Manages the extension popup UI, displaying results, handling user interactions (unsubscribe, ignore, view ignored), loading saved results, displaying scan progress, and handling messages from the background script
   - `content.js`: (Currently not actively used for the API scanning approach but remains in the project structure)
   - `images/`: Contains extension icons and potentially other UI images
 
