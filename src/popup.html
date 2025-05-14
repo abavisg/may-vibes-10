@@ -22,6 +22,9 @@
     .content {
       margin-bottom: 15px;
     }
+    .hidden-content {
+      display: none;
+    }
     #status {
       color: #888;
       font-style: italic;
@@ -106,6 +109,39 @@
      #scan-btn:hover {
       background-color: #1565c0;
     }
+    .recently-moved-item,
+    .ignored-sender-item {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    
+    .ignored-sender-item span,
+    .recently-moved-item div {
+        flex-grow: 1;
+        margin-right: 10px;
+        word-break: break-word; /* Prevent long text from overflowing */
+    }
+
+    .unignore-btn,
+    .move-back-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+        background-color: #4CAF50; /* Green */
+        color: white;
+    }
+
+    .unignore-btn:hover,
+    .move-back-btn:hover {
+        background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -114,24 +150,37 @@
   </div>
   
   <div class="content">
-    <div id="status">Click Scan Inbox to find newsletters...</div>
+    <!-- Main section for Newsletter list -->
+    <div id="main-section">
+      <div id="status">Click Scan Inbox to find newsletters...</div>
+      
+      <div id="progress-status" style="display: none; text-align: center; margin-bottom: 10px; color: #555; font-size: 14px;"></div>
+      
+      <ul id="newsletter-list">
+        <!-- Newsletter items will be added here by JavaScript -->
+        <li class="no-results">No unsubscribable emails found yet.</li>
+      </ul>
+    </div>
     
-    <div id="progress-status" style="display: none; text-align: center; margin-bottom: 10px; color: #555; font-size: 14px;"></div>
+    <!-- Section for ignored senders -->
+    <section id="ignored-senders-section" style="display: none;">
+      <h2>Ignored Senders</h2>
+      <ul id="ignored-senders-list"></ul>
+      <button id="hide-ignored-btn">Back to Newsletters</button>
+    </section>
+
+    <!-- Section for recently moved emails -->
+    <section id="recently-moved-section" style="display: none;">
+      <h2>Recently Moved to Unsubscribed</h2>
+      <ul id="recently-moved-list"></ul>
+      <button id="hide-moved-btn">Back to Newsletters</button>
+    </section>
     
-    <ul id="newsletter-list">
-      <!-- Newsletter items will be added here by JavaScript -->
-      <li class="no-results">No unsubscribable emails found yet.</li>
-    </ul>
-    
+    <!-- Footer with action buttons - always visible -->
     <div class="footer">
       <button id="scan-btn">Scan Inbox</button>
       <button id="view-ignored-btn">View Ignored Senders</button>
-    </div>
-
-    <div id="ignored-senders-section" style="display: none;">
-      <h3>Ignored Senders</h3>
-      <ul id="ignored-senders-list"></ul>
-      <button id="hide-ignored-btn">Hide</button>
+      <button id="view-moved-btn">View Recently Moved</button>
     </div>
   </div>
   

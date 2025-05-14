@@ -9,6 +9,10 @@ A Chrome extension that helps you easily find and manage unsubscribe links for n
 - Displays a list of potential newsletters in the extension popup
 - Prioritizes opening web-based unsubscribe links (HTTP/HTTPS) when clicking a list item or the unsubscribe button
 - Falls back to mailto links if no web link is available or functional
+- Automatically moves unsubscribed emails to a dedicated "Unsubscribed" folder in Gmail (creates the folder if it doesn't exist)
+- Removes emails from the displayed list after moving them to the "Unsubscribed" folder
+- Allows you to move emails back to your inbox from the "Unsubscribed" folder if needed
+- When moving emails back to inbox, you can scan again to see them in the newsletter list
 - Allows you to ignore specific senders so their emails don't appear in future scan results
 - Provides a way to view and unignore previously ignored senders via a dedicated section in the popup
 - Unignoring a sender immediately updates the main list to show their emails if they were in the last scan results
@@ -35,15 +39,22 @@ A Chrome extension that helps you easily find and manage unsubscribe links for n
 3. Click "Scan Inbox" to perform a new scan of the latest emails in your inbox
 4. Observe the progress indicator as the scan runs
 5. The list will populate with emails found to have a `List-Unsubscribe` header
-6. Click on a newsletter item or its "Unsubscribe" button. The extension will attempt to open the unsubscribe link (preferably a web link) in a new tab
-7. If you want to stop seeing emails from a specific sender in the scan results, click the "Ignore Sender" button next to their entry
-8. To view or manage ignored senders, click the "View Ignored Senders" button. From the ignored senders list, you can click "Unignore" to make their emails reappear in the main list
+6. Click on a newsletter item or its "Unsubscribe" button. The extension will:
+   - Open the unsubscribe link (preferably a web link) in a new tab
+   - Automatically move the email to the "Unsubscribed" folder
+   - Remove the item from the displayed list
+7. To view recently moved emails, click the "View Recently Moved" button
+8. From the Recently Moved list, you can move emails back to your inbox by clicking "Move back to Inbox"
+9. If you want to stop seeing emails from a specific sender in the scan results, click the "Ignore Sender" button next to their entry
+10. To view or manage ignored senders, click the "View Ignored Senders" button. From the ignored senders list, you can click "Unignore" to make their emails reappear in the main list
 
 ## Privacy
 
 This extension:
 - Uses the Chrome `identity` API for OAuth2 authentication with the Gmail API
-- Uses the Gmail API with `gmail.readonly` scope to fetch email headers (specifically `List-Unsubscribe`, `From`, and `Subject`) for scanning purposes
+- Uses the Gmail API with:
+  - `gmail.readonly` scope to fetch email headers (specifically `List-Unsubscribe`, `From`, and `Subject`) for scanning purposes
+  - `gmail.modify` scope to create the "Unsubscribed" folder and move emails to it
 - Does not read the full body content of your emails
 - Does not send your email data or unsubscribe links to any external servers
 - Stores ignored senders and the latest scan results in your browser's local storage (`chrome.storage.local`)
@@ -67,7 +78,7 @@ This extension is built using vanilla JavaScript and Chrome Extension APIs (incl
   - `images/`: Contains extension icons and potentially other UI images
 
 ### Scan Limit Configuration
-The number of emails scanned by the extension is currently limited to 250 for performance. You can adjust this limit by modifying the `maxResults` variable in the `fetchMessageList` function located in `src/background.js`.
+The number of emails scanned by the extension is currently limited to 50 for performance. You can adjust this limit by modifying the `maxResults` variable in the `fetchMessageList` function located in `src/background.js`.
 
 ### About manifest.json and .gitignore
 The `manifest.json` file is crucial for any Chrome extension. It acts as a configuration file, providing essential information to Chrome, such as the extension's name, version, permissions, background scripts, UI files (like the popup), and more. It must be located at the top level of the folder you load in `chrome://extensions/`.
@@ -79,9 +90,8 @@ You might occasionally see a warning in the Service Worker console like `Could n
 
 ### Future Improvements
 - Add support for batch unsubscribing
-- Improve UI for managing unsubscribe actions and ignored senders
 - Add statistics on unsubscribed newsletters
-- Add the ability to automatically move an email to a designated folder (e.g., "Unsubscribed") after successfully opening a web unsubscribe link.
+- Improve UI 
 
 ## License
 

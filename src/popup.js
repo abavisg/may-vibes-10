@@ -8,13 +8,24 @@ document.addEventListener('DOMContentLoaded', function() {
   const hideIgnoredButton = document.getElementById('hide-ignored-btn');
   const progressStatusElement = document.getElementById('progress-status');
   
+  // New elements for Recently Moved section
+  const viewMovedButton = document.getElementById('view-moved-btn');
+  const recentlyMovedSection = document.getElementById('recently-moved-section');
+  const recentlyMovedListElement = document.getElementById('recently-moved-list');
+  const hideMovedButton = document.getElementById('hide-moved-btn');
+  
+  // Main section element
+  const mainSection = document.getElementById('main-section');
+  
   let ignoredSenders = [];
+  let recentlyMovedEmails = []; // To store recently moved emails from storage
   
   console.log('Popup initialized');
   
   // Load ignored senders and saved unsubscribe results on startup
   loadIgnoredSenders();
-  loadSavedResults();
+  loadSavedResults(); // This loads the last scan results
+  loadRecentlyMoved(); // Load recently moved emails
   
   // Event listener for the Scan Inbox button
   scanButton.addEventListener('click', handleScanInboxClick);
@@ -22,18 +33,63 @@ document.addEventListener('DOMContentLoaded', function() {
   // Event listener for View Ignored Senders button
   viewIgnoredButton.addEventListener('click', function() {
     console.log('View Ignored Senders button clicked');
+    
+    // Show ignored senders section
     ignoredSendersSection.style.display = 'block';
-    // Hide other sections if necessary (optional, for a cleaner UI)
-    // document.getElementById('main-content').style.display = 'none'; 
+    
+    // Hide main section
+    mainSection.style.display = 'none';
+    
+    // Hide the Recently Moved section if it's visible
+    if (recentlyMovedSection) {
+      recentlyMovedSection.style.display = 'none';
+    }
+    
     displayIgnoredSenders(); // Populate the list
   });
   
   // Event listener for Hide button in ignored senders section
   hideIgnoredButton.addEventListener('click', function() {
     console.log('Hide Ignored Senders button clicked');
+    
+    // Hide ignored senders section
     ignoredSendersSection.style.display = 'none';
-    // Show other sections again (optional)
-    // document.getElementById('main-content').style.display = 'block';
+    
+    // Show main section again
+    mainSection.style.display = 'block';
+  });
+  
+  // Event listener for View Recently Moved button
+  viewMovedButton.addEventListener('click', function() {
+    console.log('View Recently Moved button clicked');
+    
+    // Show recently moved section
+    if (recentlyMovedSection) {
+      recentlyMovedSection.style.display = 'block';
+    }
+    
+    // Hide main section
+    mainSection.style.display = 'none';
+    
+    // Hide ignored senders section if it's visible
+    if (ignoredSendersSection) {
+      ignoredSendersSection.style.display = 'none';
+    }
+    
+    displayRecentlyMoved(); // Populate the list
+  });
+  
+  // Event listener for Hide button in recently moved section
+  hideMovedButton.addEventListener('click', function() {
+    console.log('Hide Recently Moved button clicked');
+    
+    // Hide the recently moved section
+    if (recentlyMovedSection) {
+      recentlyMovedSection.style.display = 'none';
+    }
+    
+    // Show main section again
+    mainSection.style.display = 'block';
   });
   
   // Add click listener to each newsletter item
@@ -43,9 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const messageId = target.dataset.messageId;
     const unsubscribeLinks = JSON.parse(target.dataset.unsubscribeLinks); // Retrieve parsed links
+    const sender = target.dataset.sender; // Get sender from data attribute
+    const subject = target.dataset.subject; // Get subject from data attribute
 
     console.log('Clicked on item with messageId:', messageId);
     console.log('Unsubscribe links:', unsubscribeLinks);
+    console.log('Sender:', sender);
+    console.log('Subject:', subject);
 
     if (unsubscribeLinks && unsubscribeLinks.length > 0) {
       // Prioritize http/https links
@@ -54,6 +114,41 @@ document.addEventListener('DOMContentLoaded', function() {
       if (httpLink) {
         console.log('Opening HTTP/S link:', httpLink);
         chrome.tabs.create({ url: httpLink });
+
+        // Store reference to the list item that was clicked
+        const listItemToRemove = target;
+
+        // Send message to background to move the email to Unsubscribed folder, include sender and subject
+        chrome.runtime.sendMessage({ action: 'moveEmailToTrash', messageId: messageId, sender: sender, subject: subject }, function(response) {
+          if (chrome.runtime.lastError) {
+            console.error('Error sending message to move email to Unsubscribed folder:', chrome.runtime.lastError);
+          } else if (response && response.success) {
+            console.log('Message sent to move email to Unsubscribed folder successfully.', messageId);
+            
+            // Remove the item from the displayed list
+            if (listItemToRemove && listItemToRemove.parentNode) {
+              listItemToRemove.remove();
+              console.log('Removed list item from UI');
+              
+              // Update status if list becomes empty
+              setTimeout(() => {
+                if (newsletterListElement.children.length === 0) {
+                  statusElement.textContent = 'No unsubscribable newsletters found.';
+                  newsletterListElement.innerHTML = '<li class="no-results">No unsubscribable emails found in the last 50 messages.</li>';
+                } else {
+                  // Update the count in the status
+                  const currentCount = newsletterListElement.querySelectorAll('li:not(.no-results)').length;
+                  statusElement.textContent = `Found ${currentCount} potential newsletter(s)`;
+                }
+              }, 100);
+            } else {
+              console.error('Could not find list item to remove or it was already removed');
+            }
+          } else if (response && response.message) {
+            console.error('Background script reported error moving email:', response.message);
+          }
+        });
+
       } else {
         // If no http/https, open the first mailto link found
         const mailtoLink = unsubscribeLinks.find(link => link.startsWith('mailto:'));
@@ -90,14 +185,27 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (chrome.runtime.lastError) {
         console.error('Error from background script:', chrome.runtime.lastError);
-        statusElement.textContent = 'Error: ' + chrome.runtime.lastError.message;
-        newsletterListElement.innerHTML = '<li class="no-results">Error scanning inbox.</li>';
+        // If chrome.runtime.lastError exists, there was an issue with the message.
+        statusElement.textContent = 'Error: Could not receive scan results from background.';
+        newsletterListElement.innerHTML = '<li class="no-results">Error scanning inbox: ' + chrome.runtime.lastError.message + '</li>';
+        // Log the full lastError object for debugging
+        console.log('chrome.runtime.lastError object:', chrome.runtime.lastError);
+        progressStatusElement.style.display = 'none'; // Hide on error
         return;
       }
       
-      if (!response || !response.success) {
+      if (!response) {
+        console.error('Empty response received from background script');
+        statusElement.textContent = 'Error: Empty response from background script';
+        newsletterListElement.innerHTML = '<li class="no-results">Error communicating with background script</li>';
+        progressStatusElement.style.display = 'none'; // Hide on error
+        return;
+      }
+      
+      if (!response.success) {
         statusElement.textContent = 'Scan failed';
         newsletterListElement.innerHTML = `<li class="no-results">${response.message || 'Unknown error during scan.'}</li>`;
+        progressStatusElement.style.display = 'none'; // Hide on error
         return;
       }
       
@@ -132,6 +240,8 @@ document.addEventListener('DOMContentLoaded', function() {
       listItem.className = 'newsletter-item';
       listItem.dataset.messageId = item.messageId;
       listItem.dataset.unsubscribeLinks = JSON.stringify(item.unsubscribeLinks);
+      listItem.dataset.sender = item.sender; // Add sender to data attribute
+      listItem.dataset.subject = item.subject; // Add subject to data attribute
       
       const senderElement = document.createElement('div');
       senderElement.className = 'sender';
@@ -153,12 +263,50 @@ document.addEventListener('DOMContentLoaded', function() {
       unsubscribeButton.className = 'unsubscribe-btn';
       unsubscribeButton.textContent = 'Unsubscribe';
       unsubscribeButton.addEventListener('click', function(event) {
+        // Prevent the event from bubbling up to the list item
+        event.stopPropagation();
+        
         // Prioritize http/https links for the button as well
         const httpLink = item.unsubscribeLinks.find(link => link.startsWith('http://') || link.startsWith('https://'));
         
         if (httpLink) {
           console.log('Opening HTTP/S link via button:', httpLink);
           chrome.tabs.create({ url: httpLink });
+
+          // Get the parent list item
+          const parentListItem = this.closest('li');
+          
+          // Send message to background to move the email to Unsubscribed folder, include sender and subject
+          chrome.runtime.sendMessage({ action: 'moveEmailToTrash', messageId: item.messageId, sender: item.sender, subject: item.subject }, function(response) {
+            if (chrome.runtime.lastError) {
+              console.error('Error sending message to move email to Unsubscribed folder:', chrome.runtime.lastError);
+            } else if (response && response.success) {
+              console.log('Message sent to move email to Unsubscribed folder successfully.', item.messageId);
+              
+              // Remove the item from the displayed list
+              if (parentListItem) {
+                parentListItem.remove();
+                console.log('Removed list item from UI');
+                
+                // Update status if list becomes empty
+                setTimeout(() => {
+                  if (newsletterListElement.children.length === 0) {
+                    statusElement.textContent = 'No unsubscribable newsletters found.';
+                    newsletterListElement.innerHTML = '<li class="no-results">No unsubscribable emails found in the last 50 messages.</li>';
+                  } else {
+                    // Update the count in the status
+                    const currentCount = newsletterListElement.querySelectorAll('li:not(.no-results)').length;
+                    statusElement.textContent = `Found ${currentCount} potential newsletter(s)`;
+                  }
+                }, 100);
+              } else {
+                console.error('Could not find parent list item to remove');
+              }
+            } else if (response && response.message) {
+              console.error('Background script reported error moving email:', response.message);
+            }
+          });
+
         } else {
           // Fallback to mailto if no http/https link is found
           const mailtoLink = item.unsubscribeLinks.find(link => link.startsWith('mailto:'));
@@ -297,6 +445,77 @@ document.addEventListener('DOMContentLoaded', function() {
         statusElement.textContent = 'Click Scan Inbox to find newsletters...';
         newsletterListElement.innerHTML = '<li class="no-results">No unsubscribable emails found yet.</li>';
       }
+    });
+  }
+
+  /**
+   * Loads recently moved emails from chrome.storage.local.
+   */
+  function loadRecentlyMoved() {
+    chrome.storage.local.get(['recentlyMovedEmails'], function(result) {
+      recentlyMovedEmails = result.recentlyMovedEmails || [];
+      console.log('Loaded recently moved emails:', recentlyMovedEmails);
+      // Note: We don't display them immediately, only when the button is clicked
+    });
+  }
+
+  /**
+   * Displays the list of recently moved emails in the UI.
+   */
+  function displayRecentlyMoved() {
+    recentlyMovedListElement.innerHTML = ''; // Clear previous list
+
+    if (recentlyMovedEmails.length === 0) {
+      recentlyMovedListElement.innerHTML = '<li class="no-results">No emails recently moved.</li>';
+      return;
+    }
+
+    recentlyMovedEmails.forEach(item => {
+      const listItem = document.createElement('li');
+      listItem.className = 'recently-moved-item'; // Use recently-moved-item class
+      listItem.dataset.messageId = item.messageId; // Store message ID
+
+      const senderSubjectElement = document.createElement('div');
+      senderSubjectElement.textContent = `From: ${item.sender}, Subject: ${item.subject}`;
+      senderSubjectElement.style.marginBottom = '5px';
+
+      const moveBackButton = document.createElement('button');
+      moveBackButton.textContent = 'Move back to Inbox';
+      moveBackButton.className = 'move-back-btn'; // Add a specific class
+      moveBackButton.addEventListener('click', function() {
+        console.log('Move back button clicked for messageId:', item.messageId);
+        // Send message to background to move the email back to inbox
+        chrome.runtime.sendMessage({ action: 'moveEmailToInbox', messageId: item.messageId }, function(response) {
+          if (chrome.runtime.lastError) {
+            console.error('Error sending message to move email back to inbox:', chrome.runtime.lastError);
+          } else if (response && response.success) {
+            console.log('Message sent to move email back to inbox successfully.', item.messageId);
+            // Remove item from display and update storage
+            listItem.remove();
+            // Also remove from the in-memory array so display updates correctly next time
+            recentlyMovedEmails = recentlyMovedEmails.filter(email => email.messageId !== item.messageId);
+            // No need to explicitly call removeRecentlyMovedMessage here, background script does it on successful move
+
+            // Update status if list becomes empty
+            if (recentlyMovedListElement.children.length === 0) {
+                 recentlyMovedListElement.innerHTML = '<li class="no-results">No emails recently moved.</li>';
+            }
+            
+            // If we're currently showing the newsletter scan results, refresh them to include this email
+            if (mainSection.style.display === 'block') {
+              // Add a slight delay to ensure Gmail API has updated
+              setTimeout(handleScanInboxClick, 1000);
+            }
+          } else if (response && response.message) {
+            console.error('Background script reported error moving email back:', response.message);
+            alert('Error moving email back to inbox: ' + response.message);
+          }
+        });
+      });
+
+      listItem.appendChild(senderSubjectElement);
+      listItem.appendChild(moveBackButton);
+      recentlyMovedListElement.appendChild(listItem);
     });
   }
 
