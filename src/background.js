@@ -155,7 +155,7 @@ function getAuthToken(options) {
  * @returns {Promise<string[]>} - Array of message IDs.
  */
 async function fetchMessageList(token) {
-  const maxResults = 250; // Fetch up to 250 messages
+  const maxResults = 20; // Fetch up to 20 messages
   const url = `https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}&q=is:inbox`
 
   const response = await fetch(url, {
