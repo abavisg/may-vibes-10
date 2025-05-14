@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gmail Newsletter Unsubscriber</title>
+  <style>
+    body {
+      width: 360px; /* Slightly wider for more list items */
+      padding: 15px;
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #333;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #000;
+    }
+    .header h2 {
+        margin: 0;
+        font-size: 22px;
+    }
+    .content {
+      margin-bottom: 15px;
+    }
+    #status {
+      color: #888;
+      font-style: italic;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #newsletter-list {
+      max-height: 350px; /* Increased height */
+      overflow-y: auto;
+      margin-bottom: 15px;
+      padding: 0;
+      list-style: none;
+    }
+    .newsletter-item {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .sender {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #000;
+    }
+    .subject {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .unsubscribe-method {
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 8px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px; /* Space between buttons */
+      margin-top: 10px;
+    }
+    button {
+      padding: 8px 15px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+        opacity: 0.9;
+    }
+    .unsubscribe-btn {
+      background-color: #d32f2f; /* Reddish color for unsubscribe */
+      color: white;
+    }
+     .unsubscribe-btn:hover {
+      background-color: #c62828;
+    }
+    .ignore-btn {
+      background-color: #e0e0e0; /* Light grey for ignore */
+      color: #333;
+    }
+     .ignore-btn:hover {
+      background-color: #d5d5d5;
+    }
+    .no-results {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+      padding: 20px;
+    }
+    #scan-btn {
+      background-color: #1976d2; /* Google Blue */
+      color: white;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+     #scan-btn:hover {
+      background-color: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Newsletter Unsubscriber</h2>
+  </div>
+  
+  <div class="content">
+    <div id="status">Click Scan Inbox to find newsletters...</div>
+    
+    <ul id="newsletter-list">
+      <!-- Newsletter items will be added here by JavaScript -->
+      <li class="no-results">No unsubscribable emails found yet.</li>
+    </ul>
+    
+    <div class="footer">
+      <button id="scan-btn">Scan Inbox</button>
+      <button id="view-ignored-btn">View Ignored Senders</button>
+    </div>
+
+    <div id="ignored-senders-section" style="display: none;">
+      <h3>Ignored Senders</h3>
+      <ul id="ignored-senders-list"></ul>
+      <button id="hide-ignored-btn">Hide</button>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html> 
