@@ -89,10 +89,26 @@ async function scanInboxForUnsubscribe() {
     console.log(`Fetched ${messageList.length} message IDs.`);
 
     const unsubscribeInfoList = [];
+    const totalMessages = messageList.length;
 
     // Fetch headers for each message and find unsubscribe links
     console.log('Fetching message headers and parsing for unsubscribe links...');
-    for (const messageId of messageList) {
+    for (let i = 0; i < totalMessages; i++) {
+      const messageId = messageList[i];
+      
+      // Send progress update to popup
+      const progress = Math.floor(((i + 1) / totalMessages) * 100);
+      const progressMessage = `Scanning message ${i + 1} of ${totalMessages} (${progress}%)`;
+      chrome.runtime.sendMessage({ action: 'updateProgress', message: progressMessage }, function() {
+        // Check chrome.runtime.lastError to see if the message was received
+        if (chrome.runtime.lastError) {
+          // This likely means the popup is closed. Log a warning instead of an error.
+          console.warn('Could not send progress update, popup likely closed.', chrome.runtime.lastError.message);
+        } else {
+          console.log('Progress update sent:', progressMessage);
+        }
+      });
+
       const unsubscribeInfo = await fetchAndParseMessage(token, messageId);
       if (unsubscribeInfo) {
         unsubscribeInfoList.push(unsubscribeInfo);

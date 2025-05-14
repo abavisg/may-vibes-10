@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const ignoredSendersSection = document.getElementById('ignored-senders-section');
   const ignoredSendersListElement = document.getElementById('ignored-senders-list');
   const hideIgnoredButton = document.getElementById('hide-ignored-btn');
+  const progressStatusElement = document.getElementById('progress-status');
   
   let ignoredSenders = [];
   
@@ -77,6 +78,8 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function handleScanInboxClick() {
     statusElement.textContent = 'Scanning inbox...';
+    progressStatusElement.textContent = 'Starting scan...';
+    progressStatusElement.style.display = 'block'; // Show the progress element
     newsletterListElement.innerHTML = ''; // Clear previous results
     scanButton.disabled = true; // Disable button while scanning
     
@@ -99,6 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       displayResults(response.unsubscribeLinks);
+      progressStatusElement.style.display = 'none'; // Hide on success
     });
   }
   
@@ -295,4 +299,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // Listen for progress updates from the background script
+  chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+      if (request.action === 'updateProgress') {
+        console.log('Popup received updateProgress message:', request.message);
+        progressStatusElement.textContent = request.message;
+      }
+      // Add logging for other message types if needed for debugging
+      // else {
+      //   console.log('Popup received other message:', request);
+      // }
+    }
+  );
 }); 
