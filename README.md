@@ -88,10 +88,17 @@ We've added `manifest.json` to the `.gitignore` file. This is primarily done to 
 ### Console Warnings (Optional)
 You might occasionally see a warning in the Service Worker console like `Could not send progress update, popup likely closed...` if you close the extension popup while a scan is still in progress. This is expected behavior and indicates that the background script is attempting to send progress updates but the popup is not available to receive them. The scan will continue and complete in the background, and the results will be saved.
 
+## Tech Stack
+
+- Vanilla JavaScript
+- Chrome Extension APIs (`identity`, `storage`, `scripting`, `runtime`, `action`, `tabs`)
+- Gmail API
+- HTML
+- CSS
+
 ### Future Improvements
 - Add support for batch unsubscribing
 - Add statistics on unsubscribed newsletters
-- Improve UI 
 
 ## License
 
